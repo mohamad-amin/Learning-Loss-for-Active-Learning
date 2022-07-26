@@ -52,8 +52,8 @@ test_transform = T.Compose([
 ])
 
 cifar10_train = CIFAR10('../../ntk-al/data', train=True, download=True, transform=train_transform)
-cifar10_unlabeled   = CIFAR10('../../ntk-al/data', train=True, download=True, transform=test_transform)
-cifar10_test  = CIFAR10('../../ntk-al/data', train=False, download=True, transform=test_transform)
+cifar10_unlabeled = CIFAR10('../../ntk-al/data', train=True, download=True, transform=test_transform)
+cifar10_test = CIFAR10('../../ntk-al/data', train=False, download=True, transform=test_transform)
 
 
 ##
