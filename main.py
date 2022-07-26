@@ -124,6 +124,7 @@ def train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss, v
                 m_module_loss.item(),
                 loss.item()
             ])
+            # Todo: replace with log report
             vis.line(
                 X=np.stack([np.array(plot_data['X'])] * len(plot_data['legend']), 1),
                 Y=np.array(plot_data['Y']),
