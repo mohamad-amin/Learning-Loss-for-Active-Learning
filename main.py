@@ -279,10 +279,10 @@ if __name__ == '__main__':
                                               sampler=SubsetRandomSampler(labeled_set), 
                                               pin_memory=True)
         
-        # Save a checkpoint
-        torch.save({
-                    'trial': trial + 1,
-                    'state_dict_backbone': models['backbone'].state_dict(),
-                    'state_dict_module': models['module'].state_dict()
-                },
-                './cifar10/train/weights/active_resnet18_cifar10_trial{}.pth'.format(trial))
+        # # Save a checkpoint
+        # torch.save({
+        #             'trial': trial + 1,
+        #             'state_dict_backbone': models['backbone'].state_dict(),
+        #             'state_dict_module': models['module'].state_dict()
+        #         },
+        #         './cifar10/train/weights/active_resnet18_cifar10_trial{}.pth'.format(trial))
