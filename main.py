@@ -23,7 +23,6 @@ import torchvision.models as models
 from torchvision.datasets import CIFAR100, CIFAR10
 
 # Utils
-import visdom
 from tqdm import tqdm
 
 # Custom
@@ -210,7 +209,8 @@ def get_uncertainty(models, unlabeled_loader):
 ##
 # Main
 if __name__ == '__main__':
-    vis = visdom.Visdom(server='http://localhost', port=9000)
+    # vis = visdom.Visdom(server='http://localhost', port=9000)
+    vis = None
     plot_data = {'X': [], 'Y': [], 'legend': ['Backbone Loss', 'Module Loss', 'Total Loss']}
 
     for trial in range(TRIALS):
