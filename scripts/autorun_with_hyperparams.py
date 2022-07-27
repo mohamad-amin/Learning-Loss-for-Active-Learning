@@ -194,6 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('--directory_modifier', default='', help='Storage directory of results modification')
     parser.add_argument('--force_random', dest='force_random', action='store_true')
     parser.add_argument('--cedar', dest='cedar', action='store_true')
+    parser.add_argument('--random_mem', default=40, type=float, help='mem required for random jobs')
     parser.set_defaults(pbs=True, force_random=False, cedar=False)
     args = parser.parse_args()
 
@@ -236,7 +237,7 @@ if __name__ == '__main__':
                 # ngpus=1,
                 # ngpus=4,
                 gpu_mem='32gb',
-                mem='40gb' if is_random else ('187gb' if (args.pbs or args.cedar) else '490G'),
+                mem='{}gb'.format(args.random_mem) if is_random else ('187gb' if (args.pbs or args.cedar) else '490G'),
                 # mem='100gb',
                 # mem=('187gb' if args.pbs else '490G'),
                 cuda_visible_devices_expr='' if is_random else 'export CUDA_VISIBLE_DEVICES=0,1,2,3',
