@@ -161,6 +161,9 @@ def construct_task_name(explanation):
     if 'al_--_acquisition' in explanation:
         name += extract_query('al_--_acquisition', addition='acq')
 
+    if 'al_--_weight' in explanation:
+        name += extract_query('al_--_weight', addition='w')
+
     return name
 
 
