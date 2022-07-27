@@ -88,8 +88,8 @@ def LossPredLoss(input, target, margin=1.0, reduction='mean'):
 iters = 0
 
 
-def train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss,
-                margin, weight, vis=None, plot_data=None):
+def train_epoch(models, criterion, optimizers, schedulers,
+                dataloaders, epoch, epoch_loss, margin, weight, vis=None, plot_data=None):
     models['backbone'].train()
     models['module'].train()
     global iters
@@ -121,6 +121,10 @@ def train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss,
         loss.backward()
         optimizers['backbone'].step()
         optimizers['module'].step()
+
+        # Todo: comment for OneCycleLR
+        schedulers['backbone'].step()
+        schedulers['module'].step()
 
         # Visualize
         if (iters % 100 == 0) and (vis != None) and (plot_data != None):
@@ -174,10 +178,12 @@ def train(models, criterion, optimizers, schedulers,
     #     os.makedirs(checkpoint_dir)
     
     for epoch in range(num_epochs):
-        schedulers['backbone'].step()
-        schedulers['module'].step()
+        # Todo: enable for multistep
+        # schedulers['backbone'].step()
+        # schedulers['module'].step()
 
-        train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss, margin, weight, vis, plot_data)
+        train_epoch(models, criterion, optimizers, schedulers,
+                    dataloaders, epoch, epoch_loss, margin, weight, vis, plot_data)
 
         # Save a checkpoint
         if False and epoch % 5 == 4:
