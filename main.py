@@ -232,7 +232,7 @@ if __name__ == '__main__':
     train_config = config.train
     al_config = config.al
 
-    print(pyyaml.dump(config))
+    print(pyaml.dump(config))
 
     # vis = visdom.Visdom(server='http://localhost', port=9000)
     vis = None
