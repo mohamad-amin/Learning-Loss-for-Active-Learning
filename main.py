@@ -247,10 +247,10 @@ if __name__ == '__main__':
         labeled_set = indices[:al_config['added_num']]
         unlabeled_set = indices[al_config['added_num']:]
         
-        train_loader = DataLoader(cifar10_train, batch_size=al_config['batch'],
+        train_loader = DataLoader(cifar10_train, batch_size=train_config['batch'],
                                   sampler=SubsetRandomSampler(labeled_set), 
                                   pin_memory=True)
-        test_loader  = DataLoader(cifar10_test, batch_size=al_config['batch'])
+        test_loader  = DataLoader(cifar10_test, batch_size=train_config['batch'])
         dataloaders  = {'train': train_loader, 'test': test_loader}
         
         # Model
@@ -290,7 +290,7 @@ if __name__ == '__main__':
             subset = unlabeled_set[:al_config['subset']]
 
             # Create unlabeled dataloader for the unlabeled subset
-            unlabeled_loader = DataLoader(cifar10_unlabeled, batch_size=al_config['batch'],
+            unlabeled_loader = DataLoader(cifar10_unlabeled, batch_size=train_config['batch'],
                                           sampler=SubsetSequentialSampler(subset), # more convenient if we maintain the order of subset
                                           pin_memory=True)
 
@@ -309,7 +309,7 @@ if __name__ == '__main__':
                             + unlabeled_set[al_config['subset']:]
 
             # Create a new dataloader for the updated labeled dataset
-            dataloaders['train'] = DataLoader(cifar10_train, batch_size=al_config['batch'],
+            dataloaders['train'] = DataLoader(cifar10_train, batch_size=train_config['batch'],
                                               sampler=SubsetRandomSampler(labeled_set), 
                                               pin_memory=True)
         
