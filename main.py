@@ -168,7 +168,6 @@ def test(models, dataloaders, mode='val'):
 
 def train(models, criterion, optimizers, schedulers,
           dataloaders, num_epochs, epoch_loss, margin, weight, vis, plot_data):
-    print('>> Train a Model.')
     best_acc = 0.
     # checkpoint_dir = os.path.join('./cifar10', 'train', 'weights')
     # if not os.path.exists(checkpoint_dir):
@@ -192,7 +191,6 @@ def train(models, criterion, optimizers, schedulers,
                 },
                 '%s/active_resnet18_cifar10.pth' % (checkpoint_dir))
             print('Val Acc: {:.3f} \t Best Acc: {:.3f}'.format(acc, best_acc))
-    print('>> Finished.')
 
 
 def get_uncertainty(models, unlabeled_loader):
