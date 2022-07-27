@@ -88,7 +88,8 @@ def LossPredLoss(input, target, margin=1.0, reduction='mean'):
 iters = 0
 
 
-def train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss, vis=None, plot_data=None):
+def train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss,
+                margin, weight, vis=None, plot_data=None):
     models['backbone'].train()
     models['module'].train()
     global iters
@@ -114,8 +115,8 @@ def train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss, v
         pred_loss = pred_loss.view(pred_loss.size(0))
 
         m_backbone_loss = torch.sum(target_loss) / target_loss.size(0)
-        m_module_loss   = LossPredLoss(pred_loss, target_loss, margin=MARGIN)
-        loss            = m_backbone_loss + WEIGHT * m_module_loss
+        m_module_loss   = LossPredLoss(pred_loss, target_loss, margin=margin)
+        loss = m_backbone_loss + weight * m_module_loss
 
         loss.backward()
         optimizers['backbone'].step()
@@ -165,7 +166,8 @@ def test(models, dataloaders, mode='val'):
     return 100 * correct / total
 
 
-def train(models, criterion, optimizers, schedulers, dataloaders, num_epochs, epoch_loss, vis, plot_data):
+def train(models, criterion, optimizers, schedulers,
+          dataloaders, num_epochs, epoch_loss, margin, weight, vis, plot_data):
     print('>> Train a Model.')
     best_acc = 0.
     # checkpoint_dir = os.path.join('./cifar10', 'train', 'weights')
@@ -176,7 +178,7 @@ def train(models, criterion, optimizers, schedulers, dataloaders, num_epochs, ep
         schedulers['backbone'].step()
         schedulers['module'].step()
 
-        train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss, vis, plot_data)
+        train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss, margin, weight, vis, plot_data)
 
         # Save a checkpoint
         if False and epoch % 5 == 4:
@@ -238,7 +240,7 @@ if __name__ == '__main__':
     vis = None
     plot_data = {'X': [], 'Y': [], 'legend': ['Backbone Loss', 'Module Loss', 'Total Loss']}
 
-    for trial in range(al_config['trials']):
+    for trial in range(train_config['trials']):
         # Initialize a labeled dataset by randomly sampling K=ADDENDUM=1,000 data points from the entire dataset.
         indices = list(range(al_config['num_train']))
         random.shuffle(indices)
@@ -273,7 +275,7 @@ if __name__ == '__main__':
 
             # Training and test
             train(models, criterion, optimizers, schedulers, dataloaders,
-                  al_config['epoch'], al_config['epoch_l'], vis, plot_data)
+                  al_config['epoch'], al_config['epoch_l'], al_config['margin'], al_config['weight'], vis, plot_data)
 
             acc = test(models, dataloaders, mode='test')
 
