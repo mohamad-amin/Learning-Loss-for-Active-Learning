@@ -29,7 +29,7 @@ from torchvision.datasets import CIFAR100, CIFAR10
 
 # Utils
 import yaml
-import pyyaml
+import pyaml
 from tqdm import tqdm
 
 # Custom
