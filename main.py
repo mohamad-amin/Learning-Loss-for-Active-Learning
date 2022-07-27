@@ -265,8 +265,14 @@ if __name__ == '__main__':
                                     momentum=train_config['momentum'], weight_decay=train_config['weight_decay'])
             optim_module   = optim.SGD(models['module'].parameters(), lr=train_config['lr'],
                                     momentum=train_config['momentum'], weight_decay=train_config['weight_decay'])
-            sched_backbone = lr_scheduler.MultiStepLR(optim_backbone, milestones=train_config['milestones'])
-            sched_module   = lr_scheduler.MultiStepLR(optim_module, milestones=train_config['milestones'])
+
+            # sched_backbone = lr_scheduler.MultiStepLR(optim_backbone, milestones=train_config['milestones'])
+            # sched_module   = lr_scheduler.MultiStepLR(optim_module, milestones=train_config['milestones'])
+
+            sched_backbone = lr_scheduler.OneCycleLR(optim_backbone, train_config['lr'],
+                                                     epochs=train_config['epoch'], steps_per_epoch=len(train_loader))
+            sched_module = lr_scheduler.OneCycleLR(optim_module, train_config['lr'],
+                                                     epochs=train_config['epoch'], steps_per_epoch=len(train_loader))
 
             optimizers = {'backbone': optim_backbone, 'module': optim_module}
             schedulers = {'backbone': sched_backbone, 'module': sched_module}
