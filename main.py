@@ -229,8 +229,8 @@ if __name__ == '__main__':
     os.makedirs(args.save_dir, exist_ok=True)
     shutil.copyfile(args.config_path, os.path.join(args.save_dir, "config.yml"))
     config = utils.load_config(args.config_path)
-    train_config = config.train
-    al_config = config.al
+    train_config = config['train']
+    al_config = config['al']
 
     print(pyaml.dump(config))
 
@@ -238,17 +238,17 @@ if __name__ == '__main__':
     vis = None
     plot_data = {'X': [], 'Y': [], 'legend': ['Backbone Loss', 'Module Loss', 'Total Loss']}
 
-    for trial in range(train_config.trials):
+    for trial in range(al_config['trials']):
         # Initialize a labeled dataset by randomly sampling K=ADDENDUM=1,000 data points from the entire dataset.
-        indices = list(range(al_config.num_train))
+        indices = list(range(al_config['num_train']))
         random.shuffle(indices)
-        labeled_set = indices[:al_config.added_num]
-        unlabeled_set = indices[al_config.added_num:]
+        labeled_set = indices[:al_config['added_num']]
+        unlabeled_set = indices[al_config['added_num']:]
         
-        train_loader = DataLoader(cifar10_train, batch_size=al_config.batch,
+        train_loader = DataLoader(cifar10_train, batch_size=al_config['batch'],
                                   sampler=SubsetRandomSampler(labeled_set), 
                                   pin_memory=True)
-        test_loader  = DataLoader(cifar10_test, batch_size=al_config.batch)
+        test_loader  = DataLoader(cifar10_test, batch_size=al_config['batch'])
         dataloaders  = {'train': train_loader, 'test': test_loader}
         
         # Model
@@ -258,56 +258,56 @@ if __name__ == '__main__':
         torch.backends.cudnn.benchmark = False
 
         # Active learning cycles
-        for cycle in range(train_config.cycles):
+        for cycle in range(al_config['cycles']):
             # Loss, criterion and scheduler (re)initialization
             criterion      = nn.CrossEntropyLoss(reduction='none')
-            optim_backbone = optim.SGD(models['backbone'].parameters(), lr=train_config.lr,
-                                    momentum=train_config.momentum, weight_decay=train_config.weight_decay)
-            optim_module   = optim.SGD(models['module'].parameters(), lr=train_config.lr,
-                                    momentum=train_config.momentum, weight_decay=train_config.weight_decay)
-            sched_backbone = lr_scheduler.MultiStepLR(optim_backbone, milestones=train_config.milestones)
-            sched_module   = lr_scheduler.MultiStepLR(optim_module, milestones=train_config.milestones)
+            optim_backbone = optim.SGD(models['backbone'].parameters(), lr=al_config['lr'],
+                                    momentum=al_config['momentum'], weight_decay=al_config['weight_decay'])
+            optim_module   = optim.SGD(models['module'].parameters(), lr=al_config['lr'],
+                                    momentum=al_config['momentum'], weight_decay=al_config['weight_decay'])
+            sched_backbone = lr_scheduler.MultiStepLR(optim_backbone, milestones=al_config['milestones'])
+            sched_module   = lr_scheduler.MultiStepLR(optim_module, milestones=al_config['milestones'])
 
             optimizers = {'backbone': optim_backbone, 'module': optim_module}
             schedulers = {'backbone': sched_backbone, 'module': sched_module}
 
             # Training and test
             train(models, criterion, optimizers, schedulers, dataloaders,
-                  train_config.epoch, train_config.epoch_l, vis, plot_data)
+                  al_config['epoch'], al_config['epoch_l'], vis, plot_data)
 
             acc = test(models, dataloaders, mode='test')
 
             print('Trial {}/{} || Cycle {}/{} || Label set size {}: Test acc {}'.format(
-                trial+1, train_config.trials, cycle+1, train_config.cycles, len(labeled_set), acc))
+                trial+1, al_config['trials'], cycle+1, al_config['cycles'], len(labeled_set), acc))
 
             ##
             #  Update the labeled dataset via loss prediction-based uncertainty measurement
 
             # Randomly sample 10000 unlabeled data points
             random.shuffle(unlabeled_set)
-            subset = unlabeled_set[:al_config.subset]
+            subset = unlabeled_set[:al_config['subset']]
 
             # Create unlabeled dataloader for the unlabeled subset
-            unlabeled_loader = DataLoader(cifar10_unlabeled, batch_size=train_config.batch,
+            unlabeled_loader = DataLoader(cifar10_unlabeled, batch_size=al_config['batch'],
                                           sampler=SubsetSequentialSampler(subset), # more convenient if we maintain the order of subset
                                           pin_memory=True)
 
             # Measure uncertainty of each data points in the subset
             uncertainty = get_uncertainty(models, unlabeled_loader)
 
-            if al_config.acquisition == 'll4al':
+            if al_config['acquisition'] == 'll4al':
                 # Index in ascending order
                 arg = np.argsort(uncertainty)
             else:
                 arg = np.random.choice(len(uncertainty), len(uncertainty), False)
             
             # Update the labeled dataset and the unlabeled dataset, respectively
-            labeled_set += list(torch.tensor(subset)[arg][-al_config.added_num:].numpy())
-            unlabeled_set = list(torch.tensor(subset)[arg][:-al_config.added_num].numpy()) \
-                            + unlabeled_set[al_config.subset:]
+            labeled_set += list(torch.tensor(subset)[arg][-al_config['added_num']:].numpy())
+            unlabeled_set = list(torch.tensor(subset)[arg][:-al_config['added_num']].numpy()) \
+                            + unlabeled_set[al_config['subset']:]
 
             # Create a new dataloader for the updated labeled dataset
-            dataloaders['train'] = DataLoader(cifar10_train, batch_size=train_config.batch,
+            dataloaders['train'] = DataLoader(cifar10_train, batch_size=al_config['batch'],
                                               sampler=SubsetRandomSampler(labeled_set), 
                                               pin_memory=True)
         
