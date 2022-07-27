@@ -194,7 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('--directory_modifier', default='', help='Storage directory of results modification')
     parser.add_argument('--force_random', dest='force_random', action='store_true')
     parser.add_argument('--cedar', dest='cedar', action='store_true')
-    parser.add_argument('--random_mem', default=40, type=float, help='mem required for random jobs')
+    parser.add_argument('--random_mem', default=40, type=int, help='mem required for random jobs')
     parser.set_defaults(pbs=True, force_random=False, cedar=False)
     args = parser.parse_args()
 
