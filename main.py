@@ -260,27 +260,27 @@ if __name__ == '__main__':
         torch.backends.cudnn.benchmark = False
 
         # Active learning cycles
-        for cycle in range(al_config['cycles']):
+        for cycle in range(train_config['cycles']):
             # Loss, criterion and scheduler (re)initialization
             criterion      = nn.CrossEntropyLoss(reduction='none')
-            optim_backbone = optim.SGD(models['backbone'].parameters(), lr=al_config['lr'],
-                                    momentum=al_config['momentum'], weight_decay=al_config['weight_decay'])
-            optim_module   = optim.SGD(models['module'].parameters(), lr=al_config['lr'],
-                                    momentum=al_config['momentum'], weight_decay=al_config['weight_decay'])
-            sched_backbone = lr_scheduler.MultiStepLR(optim_backbone, milestones=al_config['milestones'])
-            sched_module   = lr_scheduler.MultiStepLR(optim_module, milestones=al_config['milestones'])
+            optim_backbone = optim.SGD(models['backbone'].parameters(), lr=train_config['lr'],
+                                    momentum=train_config['momentum'], weight_decay=train_config['weight_decay'])
+            optim_module   = optim.SGD(models['module'].parameters(), lr=train_config['lr'],
+                                    momentum=train_config['momentum'], weight_decay=train_config['weight_decay'])
+            sched_backbone = lr_scheduler.MultiStepLR(optim_backbone, milestones=train_config['milestones'])
+            sched_module   = lr_scheduler.MultiStepLR(optim_module, milestones=train_config['milestones'])
 
             optimizers = {'backbone': optim_backbone, 'module': optim_module}
             schedulers = {'backbone': sched_backbone, 'module': sched_module}
 
             # Training and test
-            train(models, criterion, optimizers, schedulers, dataloaders,
-                  al_config['epoch'], al_config['epoch_l'], al_config['margin'], al_config['weight'], vis, plot_data)
+            train(models, criterion, optimizers, schedulers, dataloaders, train_config['epoch'],
+                  train_config['epoch_l'], al_config['margin'], al_config['weight'], vis, plot_data)
 
             acc = test(models, dataloaders, mode='test')
 
             print('Trial {}/{} || Cycle {}/{} || Label set size {}: Test acc {}'.format(
-                trial+1, al_config['trials'], cycle+1, al_config['cycles'], len(labeled_set), acc))
+                trial+1, train_config['trials'], cycle+1, train_config['cycles'], len(labeled_set), acc))
 
             ##
             #  Update the labeled dataset via loss prediction-based uncertainty measurement
