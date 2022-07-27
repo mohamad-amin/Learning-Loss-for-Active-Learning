@@ -224,7 +224,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_dir', default='', help='Path to dir to save checkpoints and logs')
     args = parser.parse_args()
 
-    utils.set_seeds(args.config_path)
+    # utils.set_seeds(args.config_path)
 
     os.makedirs(args.save_dir, exist_ok=True)
     shutil.copyfile(args.config_path, os.path.join(args.save_dir, "config.yml"))
