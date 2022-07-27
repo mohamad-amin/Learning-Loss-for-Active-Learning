@@ -28,6 +28,8 @@ import torchvision.models as models
 from torchvision.datasets import CIFAR100, CIFAR10
 
 # Utils
+import yaml
+import pyyaml
 from tqdm import tqdm
 
 # Custom
@@ -230,6 +232,7 @@ if __name__ == '__main__':
     train_config = config.train
     al_config = config.al
 
+    print(pyyaml.dump(config))
 
     # vis = visdom.Visdom(server='http://localhost', port=9000)
     vis = None
