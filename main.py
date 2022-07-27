@@ -6,7 +6,12 @@ Reference:
 
 # Python
 import os
+import shutil
 import random
+import argparse
+
+import utils
+
 
 # Torch
 import torch
@@ -28,7 +33,6 @@ from tqdm import tqdm
 # Custom
 import models.resnet as resnet
 import models.lossnet as lossnet
-from config import *
 from data.sampler import SubsetSequentialSampler
 
 # Seed
@@ -55,7 +59,6 @@ cifar10_unlabeled = CIFAR10('../ntk-al/data', train=True, download=True, transfo
 cifar10_test = CIFAR10('../ntk-al/data', train=False, download=True, transform=test_transform)
 
 
-##
 # Loss Prediction Loss
 def LossPredLoss(input, target, margin=1.0, reduction='mean'):
     assert len(input) % 2 == 0, 'the batch size is not even.'
@@ -82,7 +85,7 @@ def LossPredLoss(input, target, margin=1.0, reduction='mean'):
 # Train Utils
 iters = 0
 
-#
+
 def train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss, vis=None, plot_data=None):
     models['backbone'].train()
     models['module'].train()
@@ -139,7 +142,7 @@ def train_epoch(models, criterion, optimizers, dataloaders, epoch, epoch_loss, v
                 win=1
             )
 
-#
+
 def test(models, dataloaders, mode='val'):
     assert mode == 'val' or mode == 'test'
     models['backbone'].eval()
@@ -159,7 +162,7 @@ def test(models, dataloaders, mode='val'):
     
     return 100 * correct / total
 
-#
+
 def train(models, criterion, optimizers, schedulers, dataloaders, num_epochs, epoch_loss, vis, plot_data):
     print('>> Train a Model.')
     best_acc = 0.
@@ -187,7 +190,7 @@ def train(models, criterion, optimizers, schedulers, dataloaders, num_epochs, ep
             print('Val Acc: {:.3f} \t Best Acc: {:.3f}'.format(acc, best_acc))
     print('>> Finished.')
 
-#
+
 def get_uncertainty(models, unlabeled_loader):
     models['backbone'].eval()
     models['module'].eval()
@@ -207,24 +210,42 @@ def get_uncertainty(models, unlabeled_loader):
     return uncertainty.cpu()
 
 
-##
 # Main
 if __name__ == '__main__':
+
+    # Fixing the pthread_cancel glitch while using python 3.8 (you can comment these two lines if you're on 3.7)
+    import ctypes
+    libgcc_s = ctypes.CDLL('libgcc_s.so.1')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_path', default='', help="Path to a config")
+    parser.add_argument('--save_dir', default='', help='Path to dir to save checkpoints and logs')
+    args = parser.parse_args()
+
+    utils.set_seeds(args.config_path)
+
+    os.makedirs(args.save_dir, exist_ok=True)
+    shutil.copyfile(args.config_path, os.path.join(args.save_dir, "config.yml"))
+    config = utils.load_config(args.config_path)
+    train_config = config.train
+    al_config = config.al
+
+
     # vis = visdom.Visdom(server='http://localhost', port=9000)
     vis = None
     plot_data = {'X': [], 'Y': [], 'legend': ['Backbone Loss', 'Module Loss', 'Total Loss']}
 
-    for trial in range(TRIALS):
+    for trial in range(train_config.trials):
         # Initialize a labeled dataset by randomly sampling K=ADDENDUM=1,000 data points from the entire dataset.
-        indices = list(range(NUM_TRAIN))
+        indices = list(range(al_config.num_train))
         random.shuffle(indices)
-        labeled_set = indices[:ADDENDUM]
-        unlabeled_set = indices[ADDENDUM:]
+        labeled_set = indices[:al_config.added_num]
+        unlabeled_set = indices[al_config.added_num:]
         
-        train_loader = DataLoader(cifar10_train, batch_size=BATCH, 
+        train_loader = DataLoader(cifar10_train, batch_size=al_config.batch,
                                   sampler=SubsetRandomSampler(labeled_set), 
                                   pin_memory=True)
-        test_loader  = DataLoader(cifar10_test, batch_size=BATCH)
+        test_loader  = DataLoader(cifar10_test, batch_size=al_config.batch)
         dataloaders  = {'train': train_loader, 'test': test_loader}
         
         # Model
@@ -234,48 +255,56 @@ if __name__ == '__main__':
         torch.backends.cudnn.benchmark = False
 
         # Active learning cycles
-        for cycle in range(CYCLES):
+        for cycle in range(train_config.cycles):
             # Loss, criterion and scheduler (re)initialization
             criterion      = nn.CrossEntropyLoss(reduction='none')
-            optim_backbone = optim.SGD(models['backbone'].parameters(), lr=LR, 
-                                    momentum=MOMENTUM, weight_decay=WDECAY)
-            optim_module   = optim.SGD(models['module'].parameters(), lr=LR, 
-                                    momentum=MOMENTUM, weight_decay=WDECAY)
-            sched_backbone = lr_scheduler.MultiStepLR(optim_backbone, milestones=MILESTONES)
-            sched_module   = lr_scheduler.MultiStepLR(optim_module, milestones=MILESTONES)
+            optim_backbone = optim.SGD(models['backbone'].parameters(), lr=train_config.lr,
+                                    momentum=train_config.momentum, weight_decay=train_config.weight_decay)
+            optim_module   = optim.SGD(models['module'].parameters(), lr=train_config.lr,
+                                    momentum=train_config.momentum, weight_decay=train_config.weight_decay)
+            sched_backbone = lr_scheduler.MultiStepLR(optim_backbone, milestones=train_config.milestones)
+            sched_module   = lr_scheduler.MultiStepLR(optim_module, milestones=train_config.milestones)
 
             optimizers = {'backbone': optim_backbone, 'module': optim_module}
             schedulers = {'backbone': sched_backbone, 'module': sched_module}
 
             # Training and test
-            train(models, criterion, optimizers, schedulers, dataloaders, EPOCH, EPOCHL, vis, plot_data)
+            train(models, criterion, optimizers, schedulers, dataloaders,
+                  train_config.epoch, train_config.epoch_l, vis, plot_data)
+
             acc = test(models, dataloaders, mode='test')
-            print('Trial {}/{} || Cycle {}/{} || Label set size {}: Test acc {}'.format(trial+1, TRIALS, cycle+1, CYCLES, len(labeled_set), acc))
+
+            print('Trial {}/{} || Cycle {}/{} || Label set size {}: Test acc {}'.format(
+                trial+1, train_config.trials, cycle+1, train_config.cycles, len(labeled_set), acc))
 
             ##
             #  Update the labeled dataset via loss prediction-based uncertainty measurement
 
             # Randomly sample 10000 unlabeled data points
             random.shuffle(unlabeled_set)
-            subset = unlabeled_set[:SUBSET]
+            subset = unlabeled_set[:al_config.subset]
 
             # Create unlabeled dataloader for the unlabeled subset
-            unlabeled_loader = DataLoader(cifar10_unlabeled, batch_size=BATCH, 
+            unlabeled_loader = DataLoader(cifar10_unlabeled, batch_size=train_config.batch,
                                           sampler=SubsetSequentialSampler(subset), # more convenient if we maintain the order of subset
                                           pin_memory=True)
 
             # Measure uncertainty of each data points in the subset
             uncertainty = get_uncertainty(models, unlabeled_loader)
 
-            # Index in ascending order
-            arg = np.argsort(uncertainty)
+            if al_config.acquisition == 'll4al':
+                # Index in ascending order
+                arg = np.argsort(uncertainty)
+            else:
+                arg = np.random.choice(len(uncertainty), len(uncertainty), False)
             
             # Update the labeled dataset and the unlabeled dataset, respectively
-            labeled_set += list(torch.tensor(subset)[arg][-ADDENDUM:].numpy())
-            unlabeled_set = list(torch.tensor(subset)[arg][:-ADDENDUM].numpy()) + unlabeled_set[SUBSET:]
+            labeled_set += list(torch.tensor(subset)[arg][-al_config.added_num:].numpy())
+            unlabeled_set = list(torch.tensor(subset)[arg][:-al_config.added_num].numpy()) \
+                            + unlabeled_set[al_config.subset:]
 
             # Create a new dataloader for the updated labeled dataset
-            dataloaders['train'] = DataLoader(cifar10_train, batch_size=BATCH, 
+            dataloaders['train'] = DataLoader(cifar10_train, batch_size=train_config.batch,
                                               sampler=SubsetRandomSampler(labeled_set), 
                                               pin_memory=True)
         
