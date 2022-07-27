@@ -36,7 +36,7 @@ export JAX_ENABLE_X64=True
 
 cd $PBS_O_WORKDIR
 
-python run.py --config_path={config_path} --save_dir={run_dir}/run_{job_index}/
+python main.py --config_path={config_path} --save_dir={run_dir}/run_{job_index}/
 '''
 
 sbatch_submit_script = '''#!/bin/sh
@@ -63,7 +63,7 @@ export XLA_PYTHON_CLIENT_ALLOCATOR=platform
 
 export JAX_ENABLE_X64=True
 
-python run.py --config_path={config_path} --save_dir={run_dir}/run_{job_index}/
+python main.py --config_path={config_path} --save_dir={run_dir}/run_{job_index}/
 '''
 
 
