@@ -164,6 +164,9 @@ def construct_task_name(explanation):
     if 'al_--_weight' in explanation:
         name += extract_query('al_--_weight', addition='w')
 
+    if 'train_--_weight_decay' in explanation:
+        name += extract_query('train_--_weight_decay', addition='wd')
+
     return name
 
 
