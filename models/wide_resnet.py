@@ -61,7 +61,7 @@ class Wide_ResNet(nn.Module):
         k = widen_factor
 
         print('| wide-resnet %dx%d' %(depth, k))
-        nstages = [16*k, 32*k, 64*k, 128*k]
+        nstages = [16, 16*k, 32*k, 64*k]
         self.in_planes = nstages[0]
 
         self.conv1 = conv3x3(num_input_channels, nstages[0])
