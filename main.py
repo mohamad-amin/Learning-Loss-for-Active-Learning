@@ -269,9 +269,9 @@ if __name__ == '__main__':
     plot_data = {'X': [], 'Y': [], 'legend': ['Backbone Loss', 'Module Loss', 'Total Loss']}
 
 
-    dataset = DATASET[data_config.name]
-    train_transform = TRAIN_TRANSFORM[data_config.name]
-    test_transform = TEST_TRANSFORM[data_config.name]
+    dataset = DATASET[data_config['name']]
+    train_transform = TRAIN_TRANSFORM[data_config['name']]
+    test_transform = TEST_TRANSFORM[data_config['name']]
     data_train = dataset('../ntk-al/data', train=True, download=True, transform=train_transform)
     data_unlabeled = dataset('../ntk-al/data', train=True, download=True, transform=test_transform)
     data_test = dataset('../ntk-al/data', train=False, download=True, transform=test_transform)
