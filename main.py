@@ -25,7 +25,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 # Torchvison
 import torchvision.transforms as T
 import torchvision.models as models
-from torchvision.datasets import CIFAR100, CIFAR10
+from torchvision.datasets import CIFAR100, CIFAR10, SVHN
 
 # Utils
 import yaml
@@ -42,23 +42,47 @@ random.seed("Inyoung Cho")
 torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
 
-##
 # Data
-train_transform = T.Compose([
-    T.RandomHorizontalFlip(),
-    T.RandomCrop(size=32, padding=4),
-    T.ToTensor(),
-    T.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010]) # T.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)) # CIFAR-100
-])
+DATASET = {
+    'cifar100': CIFAR100,
+    'cifar10': CIFAR10,
+    'svhn': SVHN
+}
 
-test_transform = T.Compose([
-    T.ToTensor(),
-    T.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010]) # T.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)) # CIFAR-100
-])
+TRAIN_TRANSFORM = {
+    'cifar100': T.Compose([
+        T.RandomHorizontalFlip(),
+        T.RandomCrop(size=32, padding=4),
+        T.ToTensor(),
+        T.Normalize([0.5071, 0.4867, 0.4408], [0.2675, 0.2565, 0.2761])
+    ]),
+    'cifar10': T.Compose([
+        T.RandomHorizontalFlip(),
+        T.RandomCrop(size=32, padding=4),
+        T.ToTensor(),
+        T.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
+    ]),
+    'svhn': T.Compose([
+        T.ToTensor(),
+        T.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
+    ])
+}
 
-cifar10_train = CIFAR10('../ntk-al/data', train=True, download=True, transform=train_transform)
-cifar10_unlabeled = CIFAR10('../ntk-al/data', train=True, download=True, transform=test_transform)
-cifar10_test = CIFAR10('../ntk-al/data', train=False, download=True, transform=test_transform)
+TEST_TRANSFORM = {
+    'cifar100': T.Compose([
+        T.ToTensor(),
+        T.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761))
+    ]),
+    'cifar10': T.Compose([
+        T.ToTensor(),
+        T.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
+    ]),
+    'svhn': T.Compose([
+        T.ToTensor(),
+        T.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
+    ])
+
+}
 
 
 # Loss Prediction Loss
@@ -83,7 +107,6 @@ def LossPredLoss(input, target, margin=1.0, reduction='mean'):
     return loss
 
 
-##
 # Train Utils
 iters = 0
 
@@ -237,12 +260,21 @@ if __name__ == '__main__':
     config = utils.load_config(args.config_path)
     train_config = config['train']
     al_config = config['al']
+    data_config = config['data']
 
     print(pyaml.dump(config))
 
     # vis = visdom.Visdom(server='http://localhost', port=9000)
     vis = None
     plot_data = {'X': [], 'Y': [], 'legend': ['Backbone Loss', 'Module Loss', 'Total Loss']}
+
+
+    dataset = DATASET[data_config.name]
+    train_transform = TRAIN_TRANSFORM[data_config.name]
+    test_transform = TEST_TRANSFORM[data_config.name]
+    data_train = dataset('../ntk-al/data', train=True, download=True, transform=train_transform)
+    data_unlabeled = dataset('../ntk-al/data', train=True, download=True, transform=test_transform)
+    data_test = dataset('../ntk-al/data', train=False, download=True, transform=test_transform)
 
     for trial in range(train_config['trials']):
         # Initialize a labeled dataset by randomly sampling K=ADDENDUM=1,000 data points from the entire dataset.
@@ -251,10 +283,10 @@ if __name__ == '__main__':
         labeled_set = indices[:al_config['added_num']]
         unlabeled_set = indices[al_config['added_num']:]
         
-        train_loader = DataLoader(cifar10_train, batch_size=train_config['batch'],
+        train_loader = DataLoader(data_train, batch_size=train_config['batch'],
                                   sampler=SubsetRandomSampler(labeled_set), 
                                   pin_memory=True)
-        test_loader  = DataLoader(cifar10_test, batch_size=train_config['batch'])
+        test_loader  = DataLoader(data_test, batch_size=train_config['batch'])
         dataloaders  = {'train': train_loader, 'test': test_loader}
         
         # Model
@@ -300,7 +332,7 @@ if __name__ == '__main__':
             subset = unlabeled_set[:al_config['subset']]
 
             # Create unlabeled dataloader for the unlabeled subset
-            unlabeled_loader = DataLoader(cifar10_unlabeled, batch_size=train_config['batch'],
+            unlabeled_loader = DataLoader(data_unlabeled, batch_size=train_config['batch'],
                                           sampler=SubsetSequentialSampler(subset), # more convenient if we maintain the order of subset
                                           pin_memory=True)
 
@@ -319,7 +351,7 @@ if __name__ == '__main__':
                             + unlabeled_set[al_config['subset']:]
 
             # Create a new dataloader for the updated labeled dataset
-            dataloaders['train'] = DataLoader(cifar10_train, batch_size=train_config['batch'],
+            dataloaders['train'] = DataLoader(data_train, batch_size=train_config['batch'],
                                               sampler=SubsetRandomSampler(labeled_set), 
                                               pin_memory=True)
         
