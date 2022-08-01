@@ -129,4 +129,4 @@ def WideResNet1BL(num_classes = 10):
 
 
 def WideResNet2BL(num_classes = 10):
-    return Wide_ResNet(2input_dict['inputs'], 34, 10, 0., num_classes)
+    return Wide_ResNet(2, 34, 10, 0., num_classes)
