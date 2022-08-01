@@ -307,9 +307,18 @@ if __name__ == '__main__':
         
         # Model
         model_name = model_config['name']
+        num_features = MODEL_FEATURES[model_name]
+        if 'wide' in model_name:
+            widen_factor = model_config['widen_factor']
+            feature_sizes = [28, 14, 7][:num_features]
+            num_channels = [16 * widen_factor, 32 * widen_factor, 64 * widen_factor][:num_features]
+        else:
+            feature_sizes = [32, 16, 8, 4]
+            num_channels = [64, 128, 256, 512]
+
         model       = MODELS[model_name](num_classes=10).cuda()
-        loss_module = lossnet.LossNet(MODEL_FEATURES[model_name]).cuda()
-        models      = {'backbone': model, 'module': loss_module, 'model_features': MODEL_FEATURES[model_name]}
+        loss_module = lossnet.LossNet(MODEL_FEATURES[model_name], feature_sizes, num_channels).cuda()
+        models      = {'backbone': model, 'module': loss_module, 'model_features': num_features}
         torch.backends.cudnn.benchmark = False
 
         # Active learning cycles
