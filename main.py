@@ -274,9 +274,9 @@ if __name__ == '__main__':
     test_transform = TEST_TRANSFORM[data_config['name']]
 
     if data_config['name'] == 'svhn':
-        data_train = dataset('../ntk-al/data', split='train', download=True, transform=train_transform)
-        data_unlabeled = dataset('../ntk-al/data', split='train', download=True, transform=test_transform)
-        data_test = dataset('../ntk-al/data', split='test', download=True, transform=test_transform)
+        data_train = dataset('../ntk-al/data/SVHN', split='train', download=True, transform=train_transform)
+        data_unlabeled = dataset('../ntk-al/data/SVHN', split='train', download=True, transform=test_transform)
+        data_test = dataset('../ntk-al/data/SVHN', split='test', download=True, transform=test_transform)
     else:
         data_train = dataset('../ntk-al/data', train=True, download=True, transform=train_transform)
         data_unlabeled = dataset('../ntk-al/data', train=True, download=True, transform=test_transform)
