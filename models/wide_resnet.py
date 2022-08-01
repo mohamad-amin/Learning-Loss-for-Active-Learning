@@ -87,8 +87,7 @@ class Wide_ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, input_dict):
-        x = input_dict['inputs']
+    def forward(self, x):
         out = self.conv1(x)
         if self.num_layers == 1:
             out1 = self.layer1(out)
@@ -130,4 +129,4 @@ def WideResNet1BL(num_classes = 10):
 
 
 def WideResNet2BL(num_classes = 10):
-    return Wide_ResNet(2, 34, 10, 0., num_classes)
+    return Wide_ResNet(2input_dict['inputs'], 34, 10, 0., num_classes)
