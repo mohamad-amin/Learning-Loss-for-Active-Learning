@@ -24,7 +24,6 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 # Torchvison
 import torchvision.transforms as T
-import torchvision.models as models
 from torchvision.datasets import CIFAR100, CIFAR10, SVHN
 
 # Utils
@@ -33,7 +32,7 @@ import pyaml
 from tqdm import tqdm
 
 # Custom
-import models.resnet as resnet
+import models.resnet as resnet, models.wide_resnet as wide_resnet
 import models.lossnet as lossnet
 from data.sampler import SubsetSequentialSampler
 
@@ -84,6 +83,18 @@ TEST_TRANSFORM = {
 
 }
 
+MODELS = {
+    'resnet18': resnet.ResNet18,
+    'wideresnet_1bl': wide_resnet.WideResNet1BL,
+    'wideresnet_2bl': wide_resnet.WideResNet2BL
+}
+
+MODEL_FEATURES = {
+    'resnet18': 4,
+    'wideresnet_1bl': 1,
+    'wideresnet_2bl': 2
+}
+
 
 # Loss Prediction Loss
 def LossPredLoss(input, target, margin=1.0, reduction='mean'):
@@ -130,10 +141,8 @@ def train_epoch(models, criterion, optimizers, schedulers,
 
         if epoch > epoch_loss:
             # After 120 epochs, stop the gradient from the loss prediction module propagated to the target model.
-            features[0] = features[0].detach()
-            features[1] = features[1].detach()
-            features[2] = features[2].detach()
-            features[3] = features[3].detach()
+            for i in range(models['model_features']):
+                features[i] = features[i].detach()
         pred_loss = models['module'](features)
         pred_loss = pred_loss.view(pred_loss.size(0))
 
@@ -261,6 +270,7 @@ if __name__ == '__main__':
     train_config = config['train']
     al_config = config['al']
     data_config = config['data']
+    model_config = config['model']
 
     print(pyaml.dump(config))
 
@@ -296,9 +306,10 @@ if __name__ == '__main__':
         dataloaders  = {'train': train_loader, 'test': test_loader}
         
         # Model
-        resnet18    = resnet.ResNet18(num_classes=10).cuda()
-        loss_module = lossnet.LossNet().cuda()
-        models      = {'backbone': resnet18, 'module': loss_module}
+        model_name = model_config['name']
+        model       = MODELS[model_name](num_classes=10).cuda()
+        loss_module = lossnet.LossNet(MODEL_FEATURES[model_name]).cuda()
+        models      = {'backbone': model, 'module': loss_module, 'model_features': MODEL_FEATURES[model_name]}
         torch.backends.cudnn.benchmark = False
 
         # Active learning cycles
