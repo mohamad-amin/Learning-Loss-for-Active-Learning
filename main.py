@@ -296,7 +296,7 @@ if __name__ == '__main__':
         # Initialize a labeled dataset by randomly sampling K=ADDENDUM=1,000 data points from the entire dataset.
         indices = list(range(al_config['num_train']))
         random.shuffle(indices)
-        labeled_set = indices[:al_config['added_num']]
+        labeled_set = indices[:al_config['init_num']]
         unlabeled_set = indices[al_config['added_num']:]
         
         train_loader = DataLoader(data_train, batch_size=train_config['batch'],
