@@ -37,8 +37,8 @@ import models.lossnet as lossnet
 from data.sampler import SubsetSequentialSampler
 
 # Seed
-random.seed("Inyoung Cho")
-torch.manual_seed(0)
+random.seed("123123123")
+torch.manual_seed(12344321)
 torch.backends.cudnn.deterministic = True
 
 # Data

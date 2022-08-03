@@ -10,7 +10,7 @@ al:
 train:
   batch: 128
   cycles: 10
-  trials: 1
+  trials: 3
   epoch: 200
   epoch_l: 120
   lr: 0.1
@@ -19,3 +19,5 @@ train:
   weight_decay: 0.0005
 data:
   name: cifar10
+model:
+  name: resnet18

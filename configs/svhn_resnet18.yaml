@@ -1,0 +1,23 @@
+al:
+  num_train: 50000
+  num_val: 0
+  subset: 10000
+  init_num: 1000
+  added_num: 1000
+  margin: 1.0
+  weight: 1.0
+  acquisition: ll4al
+train:
+  batch: 128
+  cycles: 10
+  trials: 3
+  epoch: 200
+  epoch_l: 120
+  lr: 0.1
+  milestones: [160]
+  momentum: 0.9
+  weight_decay: 0.0005
+data:
+  name: svhn
+model:
+  name: resnet18
