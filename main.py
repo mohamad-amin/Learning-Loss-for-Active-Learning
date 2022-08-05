@@ -62,6 +62,8 @@ TRAIN_TRANSFORM = {
         T.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
     ]),
     'svhn': T.Compose([
+        T.RandomHorizontalFlip(),
+        T.RandomCrop(size=32, padding=4),
         T.ToTensor(),
         T.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])
     ])
